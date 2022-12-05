@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 )
 
@@ -36,6 +37,19 @@ func main() {
 		}
 	}
 
-	fmt.Println(most)
+	fmt.Println("highest count:", most)
+
+	sort.Slice(counts, func(i, j int) bool {
+		return counts[i] > counts[j]
+	})
+
+	topThree := 0
+
+	for i, c := range counts[0:3] {
+		fmt.Println("top", i, "is", c)
+		topThree += c
+	}
+
+	fmt.Println("sum of top 3:", topThree)
 
 }

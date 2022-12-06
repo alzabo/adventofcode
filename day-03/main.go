@@ -30,14 +30,14 @@ func findMatch(c []byte) (string, error) {
 	return match, nil
 }
 
-func complement(a, b map[string]bool) map[string]bool {
-	c := map[string]bool{}
+func intersection(a, b map[string]bool) map[string]bool {
+	i := map[string]bool{}
 	for k := range b {
 		if a[k] {
-			c[k] = true
+			i[k] = true
 		}
 	}
-	return c
+	return i
 }
 
 func findBadge(s [][]byte) (string, error) {
@@ -54,16 +54,16 @@ func findBadge(s [][]byte) (string, error) {
 
 	//fmt.Println(sets)
 
-	cmp := sets[0]
+	reduceSet := sets[0]
 	for _, s := range sets[1:] {
-		cmp = complement(cmp, s)
+		reduceSet = intersection(reduceSet, s)
 	}
 
-	if len(cmp) < 1 {
+	if len(reduceSet) < 1 {
 		return "", errors.New("Could not find only 1 badge")
 	}
 
-	for i := range cmp {
+	for i := range reduceSet {
 		return i, nil
 	}
 

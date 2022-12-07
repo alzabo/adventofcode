@@ -6,56 +6,54 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 )
 
-func overlap(a, b string) bool {
-	if strings.Contains(a, b) || strings.Contains(b, a) {
-		return true
+func overlap(a, b []string) bool {
+	for _, i := range a {
+		for _, j := range b {
+			if i == j {
+				return true
+			}
+		}
 	}
 	return false
 }
 
-func expands(s []byte) (string, error) {
+func expands(s []byte) ([]string, error) {
 	b, a, ok := bytes.Cut(s, []byte("-"))
+	sections := []string{}
 	if !ok {
-		return "", errors.New("could not parse section")
+		return sections, errors.New("could not parse section")
 	}
 	start, err := strconv.Atoi(string(b))
 	if err != nil {
-		return "", errors.New("failed to convert range start")
+		return sections, errors.New("failed to convert range start")
 	}
 	end, err := strconv.Atoi(string(a))
 	if err != nil {
-		return "", errors.New("failed to convert range end")
+		return sections, errors.New("failed to convert range end")
 	}
 	fmt.Println("start", start, "end", end)
-	sections := []string{}
 	for start <= end {
-		// using strings.Contains may have been a mistake compared to
-		// using sets. the numeric representation is padded to 2 characters
-		// to prevent "1" from matching "11", etc.
 		sections = append(sections, fmt.Sprintf("%02d", start))
 		start++
 	}
 
-	sec := strings.Join(sections, ",")
-
-	return sec, nil
+	return sections, nil
 }
 
-func expandSections(s []byte) (string, string, error) {
+func expandSections(s []byte) ([]string, []string, error) {
 	b, a, ok := bytes.Cut(s, []byte(","))
 	if !ok {
-		return "", "", errors.New("could not parse section descriptor")
+		return []string{}, []string{}, errors.New("could not parse section descriptor")
 	}
 	secb, err := expands(b)
 	if err != nil {
-		return "", "", err
+		return []string{}, []string{}, err
 	}
 	seca, err := expands(a)
 	if err != nil {
-		return "", "", err
+		return []string{}, []string{}, err
 	}
 
 	return secb, seca, nil

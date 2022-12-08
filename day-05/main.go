@@ -14,6 +14,7 @@ type collection struct {
 	stacks map[int]*stack
 }
 
+// move the top item from s to d
 func (c *collection) move(s, d int) error {
 	for _, i := range []int{s, d} {
 		_, ok := c.stacks[i]
@@ -26,6 +27,30 @@ func (c *collection) move(s, d int) error {
 		return err
 	}
 	c.stacks[d].push(v)
+	return nil
+}
+
+// move n items from the top of s to d, preserving their order
+func (c *collection) moveN(n, s, d int) error {
+	items := []string{}
+	for _, i := range []int{s, d} {
+		_, ok := c.stacks[i]
+		if !ok {
+			return errors.New(fmt.Sprintf("no stack found with id %v", i))
+		}
+	}
+
+	for i := 0; i < n; i++ {
+		it, err := c.stacks[s].pop()
+		if err != nil {
+			return err
+		}
+		items = append(items, it)
+	}
+
+	for i := len(items) - 1; i >= 0; i-- {
+		c.stacks[d].push(items[i])
+	}
 	return nil
 }
 
@@ -63,11 +88,9 @@ func moveItems(c collection, b []byte) error {
 	src, _ := strconv.Atoi(string(moveMatch[2]))
 	dst, _ := strconv.Atoi(string(moveMatch[3]))
 
-	for i := 1; i <= amount; i++ {
-		err := c.move(src, dst)
-		if err != nil {
-			return errors.New(fmt.Sprintf("failed to execute move %s with message %v", b, err))
-		}
+	err := c.moveN(amount, src, dst)
+	if err != nil {
+		return errors.New(fmt.Sprintf("failed to execute move %s with message %v", b, err))
 	}
 	return nil
 }

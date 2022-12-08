@@ -45,13 +45,13 @@ func (t *tracker) uniq() bool {
 func newTracker(m int) tracker {
 	t := tracker{}
 	t.chars = []rune{}
-	t.max = 4
+	t.max = m
 	return t
 }
 
 func scan(s string) int {
 	counter := 0
-	t := newTracker(4)
+	t := newTracker(14)
 	for _, ss := range s {
 		t.add(ss)
 		fmt.Println(t)

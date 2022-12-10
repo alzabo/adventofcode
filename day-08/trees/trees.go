@@ -3,12 +3,16 @@ package trees
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 )
 
 type Tree struct {
-	treeEdges
 	height int
+	up     *Tree
+	right  *Tree
+	down   *Tree
+	left   *Tree
 }
 
 func (t *Tree) Visible() bool {
@@ -73,17 +77,60 @@ func (t *Tree) visibleLeft() bool {
 }
 
 func (t *Tree) Score() int {
-	if t.up == nil || t.right == nil || t.down == nil || t.left == nil {
-		return 0
+	c := map[string]int{
+		"up":    0,
+		"right": 0,
+		"down":  0,
+		"left":  0,
 	}
-	return 0
-}
+	tUp := t.up
+	for {
+		if tUp == nil {
+			break
+		}
+		c["up"]++
+		if tUp.height >= t.height {
+			break
+		}
+		tUp = tUp.up
+	}
 
-type treeEdges struct {
-	up    *Tree
-	right *Tree
-	down  *Tree
-	left  *Tree
+	tRight := t.right
+	for {
+		if tRight == nil {
+			break
+		}
+		c["right"]++
+		if tRight.height >= t.height {
+			break
+		}
+		tRight = tRight.right
+	}
+
+	tDown := t.down
+	for {
+		if tDown == nil {
+			break
+		}
+		c["down"]++
+		if tDown.height >= t.height {
+			break
+		}
+		tDown = tDown.down
+	}
+
+	tLeft := t.left
+	for {
+		if tLeft == nil {
+			break
+		}
+		c["left"]++
+		if tLeft.height >= t.height {
+			break
+		}
+		tLeft = tLeft.left
+	}
+	return c["up"] * c["right"] * c["down"] * c["left"]
 }
 
 type TreeGrid struct {
@@ -134,6 +181,22 @@ func (g *TreeGrid) VisibleTrees() map[*Tree]bool {
 		}
 	}
 	return v
+}
+
+func (g *TreeGrid) HighScore() int {
+	s := []int{}
+	for _, y := range g.trees {
+		for _, t := range y {
+			s = append(s, t.Score())
+		}
+	}
+	sort.Slice(s, func(i, j int) bool {
+		return s[i] < s[j]
+	})
+
+	//fmt.Println(s)
+
+	return s[len(s)-1]
 }
 
 func (g *TreeGrid) Inspect() {

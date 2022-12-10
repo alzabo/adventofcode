@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -29,44 +30,48 @@ func (t *tree) visibleUp() bool {
 		if n.height > t.height {
 			return false
 		}
+		// Follow edge to next tree in up direction
 		n = n.up
 	}
 }
 
 func (t *tree) visibleRight() bool {
-	if t.right == nil {
-		return true
+	n := t.right
+	for {
+		if n == nil {
+			return true
+		}
+		if n.height > t.height {
+			return false
+		}
+		n = n.right
 	}
-
-	if t.right.height < t.height {
-		return true
-	}
-
-	return t.right.visibleRight()
 }
 
 func (t *tree) visibleDown() bool {
-	if t.down == nil {
-		return true
+	n := t.down
+	for {
+		if n == nil {
+			return true
+		}
+		if n.height > t.height {
+			return false
+		}
+		n = n.down
 	}
-
-	if t.down.height < t.height {
-		return true
-	}
-
-	return t.down.visibleDown()
 }
 
 func (t *tree) visibleLeft() bool {
-	if t.left == nil {
-		return true
+	n := t.left
+	for {
+		if n == nil {
+			return true
+		}
+		if n.height > t.height {
+			return false
+		}
+		n = n.left
 	}
-
-	if t.left.height >= t.height {
-		return false
-	}
-
-	return t.left.visibleLeft()
 }
 
 type treeEdges struct {
@@ -129,9 +134,22 @@ func (g *treeGrid) visibleTrees() map[*tree]bool {
 func (g *treeGrid) inspect() {
 	for y, tt := range g.trees {
 		for x, t := range tt {
-			fmt.Printf("tree (%d, %d): %v, %v\n", y, x, t, t.visible())
+			fmt.Printf("tree %v (%d, %d): %v, %v\n", &t, y, x, t, t.visible())
 		}
 	}
+}
+
+func (g *treeGrid) tree(y, x int) (*tree, error) {
+	if y > len(g.trees)-1 {
+		return &tree{}, errors.New(fmt.Sprint("y index", y, "out of bounds"))
+	}
+	col := g.trees[y]
+
+	if x > len(col)-1 {
+		return &tree{}, errors.New(fmt.Sprint("x index", x, "out of bounds"))
+	}
+
+	return g.trees[y][x], nil
 }
 
 func newTreeGrid() treeGrid {
@@ -174,6 +192,12 @@ func main() {
 	}
 
 	fmt.Println("visible trees (part 1):", visibleCount)
+
+	treeA, _ := trees.tree(97, 96)
+	fmt.Println(&treeA, treeA)
+
+	treeB, _ := trees.tree(98, 96)
+	fmt.Println(&treeB, treeB)
 
 	//parseFS(lines, root)
 

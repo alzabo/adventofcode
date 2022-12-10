@@ -1,3 +1,6 @@
 go 1.19
 
-use ./day-08/trees
+use (
+	./day-08/trees
+	./day-09/nine
+)

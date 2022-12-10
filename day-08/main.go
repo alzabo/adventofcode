@@ -17,7 +17,7 @@ func (t *tree) visible() bool {
 	if t.up == nil || t.right == nil || t.down == nil || t.left == nil {
 		return true
 	}
-	return t.visibleUp() && t.visibleRight() && t.visibleDown() && t.visibleLeft()
+	return t.visibleUp() || t.visibleRight() || t.visibleDown() || t.visibleLeft()
 }
 
 // TODO: metaprogramming for these??
@@ -27,7 +27,7 @@ func (t *tree) visibleUp() bool {
 		if n == nil {
 			return true
 		}
-		if n.height > t.height {
+		if n.height >= t.height {
 			return false
 		}
 		// Follow edge to next tree in up direction
@@ -41,7 +41,7 @@ func (t *tree) visibleRight() bool {
 		if n == nil {
 			return true
 		}
-		if n.height > t.height {
+		if n.height >= t.height {
 			return false
 		}
 		n = n.right
@@ -54,7 +54,7 @@ func (t *tree) visibleDown() bool {
 		if n == nil {
 			return true
 		}
-		if n.height > t.height {
+		if n.height >= t.height {
 			return false
 		}
 		n = n.down
@@ -67,7 +67,7 @@ func (t *tree) visibleLeft() bool {
 		if n == nil {
 			return true
 		}
-		if n.height > t.height {
+		if n.height >= t.height {
 			return false
 		}
 		n = n.left
@@ -87,7 +87,7 @@ type treeGrid struct {
 
 // add is called in to build a matrix of trees. it is assumed that
 // it is called in order of ascending x, y coordinates
-func (g *treeGrid) add(x, y int, t *tree) {
+func (g *treeGrid) add(y, x int, t *tree) {
 	// Add another tree slice to the y axis, if needed
 	if len(g.trees)-1 < y {
 		g.trees = append(g.trees, []*tree{})
@@ -168,7 +168,7 @@ func newTreeGridFromInput(b [][]byte) treeGrid {
 			tree := tree{
 				height: v,
 			}
-			g.add(x, y, &tree)
+			g.add(y, x, &tree)
 			//trees = append(trees, &tree)
 		}
 	}
@@ -194,10 +194,12 @@ func main() {
 	fmt.Println("visible trees (part 1):", visibleCount)
 
 	treeA, _ := trees.tree(97, 96)
-	fmt.Println(&treeA, treeA)
+	fmt.Println("a (97, 96):", &treeA, treeA, "visible:", treeA.visible())
+	fmt.Println("a.down:", &treeA.down, treeA.down, "visible:", treeA.down.visible())
+	fmt.Println("a.down.down", treeA.down.down)
 
 	treeB, _ := trees.tree(98, 96)
-	fmt.Println(&treeB, treeB)
+	fmt.Println("b (98, 96):", &treeB, treeB, "visible:", treeB.visible())
 
 	//parseFS(lines, root)
 

@@ -18,6 +18,7 @@ func main() {
 	input := bytes.Split(b, []byte("\n"))
 	nine.ExecuteMoves(&rope, input)
 
-	fmt.Println(len(rope.Head.Visited))
+	fmt.Println("Head visited", len(rope.Head.Visited))
+	fmt.Println("Tail visited", len(rope.Tail.Visited))
 
 }

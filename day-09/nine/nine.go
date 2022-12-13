@@ -48,27 +48,43 @@ func (h *Head) Sync() {
 }
 
 func (h *Head) Move(a axis, c int) {
+	wrap := func(f func()) {
+		p := h.Position
+		f()
+		h.Sync()
+		if h.Tail != nil {
+			h.Tail.React(headMoveEvent{current: h.Position, previous: p})
+		}
+	}
+
 	if c > 0 {
 		for i := 0; i < c; i++ {
-			if a == X {
-				h.Position.X++
-			}
-			if a == Y {
-				h.Position.Y++
-			}
-			h.Sync()
+			wrap(func() {
+				if a == X {
+					h.Position.X++
+				}
+				if a == Y {
+					h.Position.Y++
+				}
+			})
 		}
 	} else {
 		for i := 0; i > c; i-- {
-			if a == X {
-				h.Position.X--
-			}
-			if a == Y {
-				h.Position.Y--
-			}
-			h.Sync()
+			wrap(func() {
+				if a == X {
+					h.Position.X--
+				}
+				if a == Y {
+					h.Position.Y--
+				}
+			})
 		}
 	}
+}
+
+type headMoveEvent struct {
+	previous Point
+	current  Point
 }
 
 type Tail struct {
@@ -81,22 +97,37 @@ func (t *Tail) SavePosition(p Point) {
 	t.Visited[[2]int{p.X, p.Y}] = true
 }
 
+func (t *Tail) React(e headMoveEvent) {
+	if !t.Position.Touch(e.current) {
+		//fmt.Println("tail position", t.Position, "previous head position", e.previous)
+		t.Position = e.previous
+		t.Sync()
+	}
+}
+
 func (t *Tail) Sync() {
 	t.SavePosition(t.Position)
 }
 
+// Didn't end up using this. the pointer to t.Head never showed the updated position
 func (t *Tail) EndsTouch() (bool, error) {
 	if t.Head == nil {
 		return false, errors.New("relation to end cannot be computed when Head is not set")
 	}
+	hx := t.Head.Position.X
+	if hx < 0 {
+		hx = hx * -1
+	}
+	hy := t.Head.Position.Y
+	if hy < 0 {
+		hy = hy * -1
+	}
+
 	deltas := []int{
-		t.Position.X - t.Head.Position.X,
-		t.Position.Y - t.Head.Position.Y,
+		t.Position.X - hx,
+		t.Position.Y - hy,
 	}
 	for _, d := range deltas {
-		if d < 0 {
-			d = d * -1
-		}
 		if d > 1 {
 			return false, nil
 		}
@@ -108,6 +139,22 @@ func (t *Tail) EndsTouch() (bool, error) {
 type Point struct {
 	X int
 	Y int
+}
+
+func (p Point) Touch(op Point) bool {
+	deltas := [2]int{
+		p.X - op.X,
+		p.Y - op.Y,
+	}
+	for _, d := range deltas {
+		if d < 0 {
+			d = d * -1
+		}
+		if d > 1 {
+			return false
+		}
+	}
+	return true
 }
 
 func NewHead() Head {

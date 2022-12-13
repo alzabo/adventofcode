@@ -39,6 +39,8 @@ func TestRopeEndsTouching(t *testing.T) {
 		{Tail{Position: Point{X: -2, Y: 0}}, Head{Position: Point{X: -1, Y: 0}}, true, nil},
 		{Tail{Position: Point{X: 0, Y: 0}}, Head{Position: Point{X: 2, Y: 1}}, false, nil},
 		{Tail{Position: Point{X: -2, Y: 0}}, Head{Position: Point{X: 0, Y: 0}}, false, nil},
+		{Tail{Position: Point{X: -2, Y: 0}}, Head{Position: Point{X: -4, Y: 0}}, false, nil},
+		{Tail{Position: Point{X: 0, Y: 0}}, Head{Position: Point{X: -176, Y: 279}}, false, nil},
 	}
 
 	for _, tt := range tests {

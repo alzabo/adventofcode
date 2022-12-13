@@ -1,7 +1,7 @@
 package nine
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -31,6 +31,120 @@ func NewRope() Rope {
 	r.Head.Tail = &r.Tail
 	r.Tail.Head = &r.Head
 	return r
+}
+
+type LongRope struct {
+	Knots []*Knot
+}
+
+func NewLongRope(l int) LongRope {
+	r := LongRope{}
+	for i := 0; i < l; i++ {
+		k := NewKnot()
+		if i > 0 {
+			r.Knots[i-1].Next = &k
+		}
+		r.Knots = append(r.Knots, &k)
+	}
+	return r
+}
+
+type Knot struct {
+	Position Point
+	Visited  map[[2]int]bool
+	Next     *Knot
+}
+
+func (k *Knot) Sync() {
+	k.Visited[[2]int{k.Position.X, k.Position.Y}] = true
+}
+
+func (k *Knot) React(e headMoveEvent) {
+	if k.Position.Touch(e.current) {
+		return
+	}
+
+	d := e.current.Delta(k.Position)
+	fmt.Println(d)
+	if d.X != 0 && d.Y != 0 {
+		v := [2]int{}
+		for i, j := range [2]int{d.X, d.Y} {
+			if j > 1 || j < -1 {
+				v[i] = j - 1
+			} else {
+				v[i] = j
+			}
+		}
+		nd := PointDelta{X: v[0], Y: v[1]}
+		fmt.Println("new delta:", nd)
+		k.MoveTo(k.Position.Add(nd))
+	}
+	if d.X != 0 {
+		k.Move(X, d.X-1)
+	}
+	if d.Y != 0 {
+		k.Move(Y, d.X-1)
+	}
+}
+
+func (k *Knot) moveWrapper(f func()) {
+	p := k.Position
+	f()
+	k.Sync()
+	if k.Next != nil {
+		ev := headMoveEvent{current: k.Position, previous: p}
+		fmt.Println(ev)
+		k.Next.React(ev)
+	}
+}
+
+func (k *Knot) MoveTo(p Point) {
+	k.moveWrapper(func() {
+		k.Position = p
+	})
+}
+
+func (k *Knot) Move(a axis, c int) {
+	wrap := func(f func()) {
+		p := k.Position
+		f()
+		k.Sync()
+		if k.Next != nil {
+			k.Next.React(headMoveEvent{current: k.Position, previous: p})
+		}
+	}
+
+	if c > 0 {
+		for i := 0; i < c; i++ {
+			wrap(func() {
+				if a == X {
+					k.Position.X++
+				}
+				if a == Y {
+					k.Position.Y++
+				}
+			})
+		}
+	} else {
+		for i := 0; i > c; i-- {
+			wrap(func() {
+				if a == X {
+					k.Position.X--
+				}
+				if a == Y {
+					k.Position.Y--
+				}
+			})
+		}
+	}
+}
+
+func NewKnot() Knot {
+	k := Knot{}
+	k.Position = Point{0, 0}
+	k.Visited = map[[2]int]bool{}
+	k.Sync()
+	return k
 }
 
 type Head struct {
@@ -109,33 +223,6 @@ func (t *Tail) Sync() {
 	t.SavePosition(t.Position)
 }
 
-// Didn't end up using this. the pointer to t.Head never showed the updated position
-func (t *Tail) EndsTouch() (bool, error) {
-	if t.Head == nil {
-		return false, errors.New("relation to end cannot be computed when Head is not set")
-	}
-	hx := t.Head.Position.X
-	if hx < 0 {
-		hx = hx * -1
-	}
-	hy := t.Head.Position.Y
-	if hy < 0 {
-		hy = hy * -1
-	}
-
-	deltas := []int{
-		t.Position.X - hx,
-		t.Position.Y - hy,
-	}
-	for _, d := range deltas {
-		if d > 1 {
-			return false, nil
-		}
-	}
-	return true, nil
-
-}
-
 type Point struct {
 	X int
 	Y int
@@ -157,6 +244,25 @@ func (p Point) Touch(op Point) bool {
 	return true
 }
 
+func (p Point) Add(d PointDelta) Point {
+	return Point{
+		X: p.X + d.X,
+		Y: p.Y + d.Y,
+	}
+}
+
+func (p Point) Delta(op Point) PointDelta {
+	return PointDelta{
+		X: p.X - op.X,
+		Y: p.Y - op.Y,
+	}
+}
+
+type PointDelta struct {
+	X int
+	Y int
+}
+
 func NewHead() Head {
 	h := Head{}
 	h.Position.X = 0
@@ -175,7 +281,11 @@ func NewTail() Tail {
 	return t
 }
 
-func ExecuteMoves(r *Rope, b [][]byte) {
+type mover interface {
+	Move(axis, int)
+}
+
+func ExecuteMoves(m mover, b [][]byte) {
 	for _, bb := range b {
 		move := string(bb)
 		dir, c, _ := strings.Cut(move, " ")
@@ -185,13 +295,13 @@ func ExecuteMoves(r *Rope, b [][]byte) {
 		}
 		switch dir {
 		case "U":
-			r.Move(Y, count)
+			m.Move(Y, count)
 		case "D":
-			r.Move(Y, count*-1)
+			m.Move(Y, count*-1)
 		case "R":
-			r.Move(X, count)
+			m.Move(X, count)
 		case "L":
-			r.Move(X, count*-1)
+			m.Move(X, count*-1)
 		}
 	}
 }

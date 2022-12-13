@@ -21,4 +21,11 @@ func main() {
 	fmt.Println("Head visited", len(rope.Head.Visited))
 	fmt.Println("Tail visited", len(rope.Tail.Visited))
 
+	longrope := nine.NewLongRope(10)
+	nine.ExecuteMoves(longrope.Knots[0], input)
+	for i, k := range longrope.Knots {
+		fmt.Println(i, k.Position)
+	}
+	fmt.Println("part 2 tail visited", len(longrope.Knots[9].Visited))
+
 }

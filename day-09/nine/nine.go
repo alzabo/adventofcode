@@ -1,7 +1,6 @@
 package nine
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -62,41 +61,31 @@ func (k *Knot) Sync() {
 }
 
 func (k *Knot) React(e knotMoveEvent) {
-	fmt.Println("ID:", k.ID, "received move from", e.fromID, "--", e.previous, "to:", e.current)
 	if k.Position.Touch(e.current) {
 		return
 	}
 
-	fmt.Println("ID:", k.ID, "current position:", k.Position, "didn't touch:", e.current)
-
-	d := e.current.Delta(k.Position)
-	fmt.Println("delta is:", d)
-	if d.X != 0 && d.Y != 0 {
-		v := [2]int{}
-		for i, j := range [2]int{d.X, d.Y} {
-			if j > 1 {
-				v[i] = j - 1
-				continue
-			}
-			if j < -1 {
-				v[i] = j + 1
-				continue
-			}
-			v[i] = j
+	// When a move is required, the magnitude of the PointDelta
+	// will be {0, 2} or {1, 2}, but we should only move 1 step
+	// to get back into contact. so {0, 2} is clamped to {0, 1}.
+	// When the lead Knot moves diagonally away, resulting in a
+	// delta like {1, 2}. These should be clamped to {1, 1}.
+	delta := e.current.Delta(k.Position)
+	v := [2]int{}
+	for i, j := range [2]int{delta.X, delta.Y} {
+		if j > 1 {
+			v[i] = j - 1
+			continue
 		}
-		nd := PointDelta{X: v[0], Y: v[1]}
-		fmt.Println("new delta:", nd)
-		k.MoveTo(k.Position.Add(nd))
-		return
+		if j < -1 {
+			v[i] = j + 1
+			continue
+		}
+		v[i] = j
 	}
-	if d.X > 0 {
-		k.Move(X, d.X-1)
-		return
-	}
-	if d.Y != 0 {
-		k.Move(Y, d.Y-1)
-		return
-	}
+	nd := PointDelta{X: v[0], Y: v[1]}
+	//fmt.Println("new delta:", nd)
+	k.MoveTo(k.Position.Add(nd))
 }
 
 func (k *Knot) moveWrapper(f func()) {
@@ -105,7 +94,7 @@ func (k *Knot) moveWrapper(f func()) {
 	k.Sync()
 	if k.Next != nil {
 		ev := knotMoveEvent{fromID: k.ID, current: k.Position, previous: p}
-		fmt.Println("ID:", k.ID, "current:", ev.current, "previous:", ev.previous)
+		//fmt.Println("ID:", k.ID, "current:", ev.current, "previous:", ev.previous)
 		k.Next.React(ev)
 	}
 }
@@ -117,18 +106,9 @@ func (k *Knot) MoveTo(p Point) {
 }
 
 func (k *Knot) Move(a axis, c int) {
-	wrap := func(f func()) {
-		p := k.Position
-		f()
-		k.Sync()
-		if k.Next != nil {
-			k.Next.React(knotMoveEvent{fromID: k.ID, current: k.Position, previous: p})
-		}
-	}
-
 	if c > 0 {
 		for i := 0; i < c; i++ {
-			wrap(func() {
+			k.moveWrapper(func() {
 				if a == X {
 					k.Position.X++
 				}
@@ -139,7 +119,7 @@ func (k *Knot) Move(a axis, c int) {
 		}
 	} else {
 		for i := 0; i > c; i-- {
-			wrap(func() {
+			k.moveWrapper(func() {
 				if a == X {
 					k.Position.X--
 				}
@@ -306,7 +286,7 @@ type mover interface {
 func ExecuteMoves(m mover, b [][]byte) {
 	for _, bb := range b {
 		move := string(bb)
-		fmt.Println("----->###", move, "###<------")
+		//fmt.Println("----->###", move, "###<------")
 		dir, c, _ := strings.Cut(move, " ")
 		count, err := strconv.Atoi(c)
 		if err != nil {

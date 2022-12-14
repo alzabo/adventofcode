@@ -41,6 +41,7 @@ func NewLongRope(l int) LongRope {
 	r := LongRope{}
 	for i := 0; i < l; i++ {
 		k := NewKnot()
+		k.ID = i
 		if i > 0 {
 			r.Knots[i-1].Next = &k
 		}
@@ -50,6 +51,7 @@ func NewLongRope(l int) LongRope {
 }
 
 type Knot struct {
+	ID       int
 	Position Point
 	Visited  map[[2]int]bool
 	Next     *Knot
@@ -59,31 +61,41 @@ func (k *Knot) Sync() {
 	k.Visited[[2]int{k.Position.X, k.Position.Y}] = true
 }
 
-func (k *Knot) React(e headMoveEvent) {
+func (k *Knot) React(e knotMoveEvent) {
+	fmt.Println("ID:", k.ID, "received move from", e.fromID, "--", e.previous, "to:", e.current)
 	if k.Position.Touch(e.current) {
 		return
 	}
 
+	fmt.Println("ID:", k.ID, "current position:", k.Position, "didn't touch:", e.current)
+
 	d := e.current.Delta(k.Position)
-	fmt.Println(d)
+	fmt.Println("delta is:", d)
 	if d.X != 0 && d.Y != 0 {
 		v := [2]int{}
 		for i, j := range [2]int{d.X, d.Y} {
-			if j > 1 || j < -1 {
+			if j > 1 {
 				v[i] = j - 1
-			} else {
-				v[i] = j
+				continue
 			}
+			if j < -1 {
+				v[i] = j + 1
+				continue
+			}
+			v[i] = j
 		}
 		nd := PointDelta{X: v[0], Y: v[1]}
 		fmt.Println("new delta:", nd)
 		k.MoveTo(k.Position.Add(nd))
+		return
 	}
-	if d.X != 0 {
+	if d.X > 0 {
 		k.Move(X, d.X-1)
+		return
 	}
 	if d.Y != 0 {
-		k.Move(Y, d.X-1)
+		k.Move(Y, d.Y-1)
+		return
 	}
 }
 
@@ -92,8 +104,8 @@ func (k *Knot) moveWrapper(f func()) {
 	f()
 	k.Sync()
 	if k.Next != nil {
-		ev := headMoveEvent{current: k.Position, previous: p}
-		fmt.Println(ev)
+		ev := knotMoveEvent{fromID: k.ID, current: k.Position, previous: p}
+		fmt.Println("ID:", k.ID, "current:", ev.current, "previous:", ev.previous)
 		k.Next.React(ev)
 	}
 }
@@ -110,7 +122,7 @@ func (k *Knot) Move(a axis, c int) {
 		f()
 		k.Sync()
 		if k.Next != nil {
-			k.Next.React(headMoveEvent{current: k.Position, previous: p})
+			k.Next.React(knotMoveEvent{fromID: k.ID, current: k.Position, previous: p})
 		}
 	}
 
@@ -197,6 +209,12 @@ func (h *Head) Move(a axis, c int) {
 }
 
 type headMoveEvent struct {
+	previous Point
+	current  Point
+}
+
+type knotMoveEvent struct {
+	fromID   int
 	previous Point
 	current  Point
 }
@@ -288,6 +306,7 @@ type mover interface {
 func ExecuteMoves(m mover, b [][]byte) {
 	for _, bb := range b {
 		move := string(bb)
+		fmt.Println("----->###", move, "###<------")
 		dir, c, _ := strings.Cut(move, " ")
 		count, err := strconv.Atoi(c)
 		if err != nil {

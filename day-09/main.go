@@ -10,16 +10,17 @@ import (
 
 func main() {
 	fmt.Println("Day 9")
-	rope := nine.NewRope()
 	b, err := os.ReadFile("input")
 	if err != nil {
 		panic(err)
 	}
 	input := bytes.Split(b, []byte("\n"))
-	nine.ExecuteMoves(&rope, input)
 
-	fmt.Println("Head visited", len(rope.Head.Visited))
-	fmt.Println("Tail visited", len(rope.Tail.Visited))
+	rope := nine.NewLongRope(2)
+	nine.ExecuteMoves(rope.Knots[0], input)
+
+	fmt.Println("Head visited", len(rope.Knots[0].Visited))
+	fmt.Println("Tail visited", len(rope.Knots[1].Visited))
 
 	longrope := nine.NewLongRope(10)
 	nine.ExecuteMoves(longrope.Knots[0], input)

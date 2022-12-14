@@ -14,24 +14,6 @@ const (
 	Y = iota
 )
 
-type Rope struct {
-	Head Head
-	Tail Tail
-}
-
-func (r *Rope) Move(a axis, c int) {
-	r.Head.Move(a, c)
-}
-
-func NewRope() Rope {
-	r := Rope{}
-	r.Head = NewHead()
-	r.Tail = NewTail()
-	r.Head.Tail = &r.Tail
-	r.Tail.Head = &r.Head
-	return r
-}
-
 type LongRope struct {
 	Knots []*Knot
 }
@@ -139,86 +121,10 @@ func NewKnot() Knot {
 	return k
 }
 
-type Head struct {
-	Position Point
-	Visited  map[[2]int]bool
-	Tail     *Tail
-}
-
-func (h *Head) SavePosition(p Point) {
-	h.Visited[[2]int{p.X, p.Y}] = true
-}
-
-func (h *Head) Sync() {
-	h.SavePosition(h.Position)
-}
-
-func (h *Head) Move(a axis, c int) {
-	wrap := func(f func()) {
-		p := h.Position
-		f()
-		h.Sync()
-		if h.Tail != nil {
-			h.Tail.React(headMoveEvent{current: h.Position, previous: p})
-		}
-	}
-
-	if c > 0 {
-		for i := 0; i < c; i++ {
-			wrap(func() {
-				if a == X {
-					h.Position.X++
-				}
-				if a == Y {
-					h.Position.Y++
-				}
-			})
-		}
-	} else {
-		for i := 0; i > c; i-- {
-			wrap(func() {
-				if a == X {
-					h.Position.X--
-				}
-				if a == Y {
-					h.Position.Y--
-				}
-			})
-		}
-	}
-}
-
-type headMoveEvent struct {
-	previous Point
-	current  Point
-}
-
 type knotMoveEvent struct {
 	fromID   int
 	previous Point
 	current  Point
-}
-
-type Tail struct {
-	Position Point
-	Visited  map[[2]int]bool
-	Head     *Head
-}
-
-func (t *Tail) SavePosition(p Point) {
-	t.Visited[[2]int{p.X, p.Y}] = true
-}
-
-func (t *Tail) React(e headMoveEvent) {
-	if !t.Position.Touch(e.current) {
-		//fmt.Println("tail position", t.Position, "previous head position", e.previous)
-		t.Position = e.previous
-		t.Sync()
-	}
-}
-
-func (t *Tail) Sync() {
-	t.SavePosition(t.Position)
 }
 
 type Point struct {
@@ -259,24 +165,6 @@ func (p Point) Delta(op Point) PointDelta {
 type PointDelta struct {
 	X int
 	Y int
-}
-
-func NewHead() Head {
-	h := Head{}
-	h.Position.X = 0
-	h.Position.Y = 0
-	h.Visited = map[[2]int]bool{}
-	h.SavePosition(h.Position)
-	return h
-}
-
-func NewTail() Tail {
-	t := Tail{}
-	t.Position.X = 0
-	t.Position.Y = 0
-	t.Visited = map[[2]int]bool{}
-	t.SavePosition(t.Position)
-	return t
 }
 
 type mover interface {

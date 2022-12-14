@@ -8,19 +8,19 @@ import (
 
 func TestHead(t *testing.T) {
 	tests := []struct {
-		head Head
-		f    func(r *Head)
-		want Head
+		knot Knot
+		f    func(r *Knot)
+		want Knot
 	}{
-		{NewHead(), func(h *Head) { h.Move(X, -2); h.Move(Y, 1) }, Head{
+		{NewKnot(), func(k *Knot) { k.Move(X, -2); k.Move(Y, 1) }, Knot{
 			Position: Point{X: -2, Y: 1},
 			Visited:  map[[2]int]bool{{-2, 0}: true, {-1, 0}: true, {0, 0}: true, {-2, 1}: true},
 		}},
 	}
 
 	for _, tt := range tests {
-		tt.f(&tt.head)
-		diff := cmp.Diff(tt.want, tt.head)
+		tt.f(&tt.knot)
+		diff := cmp.Diff(tt.want, tt.knot)
 		if diff != "" {
 			t.Errorf(diff)
 		}

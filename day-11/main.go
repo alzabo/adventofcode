@@ -10,10 +10,11 @@ import (
 )
 
 type Monkey struct {
-	Inv   []int
-	Op    func(int) int
-	Test  func(int) int
-	Count int
+	Inv    []int
+	Op     func(int) int
+	Test   func(int) int
+	Count  int
+	Modulo int
 }
 
 type Monkeys []*Monkey
@@ -80,6 +81,7 @@ func monkeyMaker(b []byte) *Monkey {
 			}
 			//fmt.Println("test values:", v)
 			m.Test = makeTest(v)
+			m.Modulo = v[0]
 			//m.Test = MonkeyTest{
 			//	mod: v[0],
 			//	t:   v[1],
@@ -162,27 +164,33 @@ func main() {
 
 	fmt.Println(monkeys)
 
-	for i := 0; i < 20; i++ {
+	denominator := 1
+	for _, m := range monkeys {
+		denominator *= m.Modulo
+	}
+
+	for i := 0; i < 10000; i++ {
 		for i, m := range monkeys {
 			_ = i
 			for {
 				if len(m.Inv) == 0 {
 					break
 				}
-				fmt.Println("monkey", i, "has", m.Inv)
+				//fmt.Println("monkey", i, "has", m.Inv)
 				x := m.Inv[0]
-				fmt.Println("monkey", i, "examines", x)
+				//fmt.Println("monkey", i, "examines", x)
 				m.Inv = append(m.Inv[:0], m.Inv[1:]...)
-				fmt.Println("monkey", i, "has", m.Inv, "remaining...")
-				x = m.Op(x) / 3
+				//fmt.Println("monkey", i, "has", m.Inv, "remaining...")
+				x = m.Op(x)
+				x %= denominator
 				nm := monkeys[m.Test(x)]
 				nm.Inv = append(nm.Inv, x)
 				m.Count++
-				fmt.Println("item with value", x, "thrown by monkey", i, "to", nm)
+				//fmt.Println("item with value", x, "thrown by monkey", i, "to", nm)
 			}
 		}
 	}
 
 	sort.Sort(monkeys)
-	fmt.Println("part 1", monkeys[monkeys.Len()-1].Count*monkeys[monkeys.Len()-2].Count)
+	fmt.Println("part 2", monkeys[monkeys.Len()-1].Count*monkeys[monkeys.Len()-2].Count)
 }

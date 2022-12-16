@@ -3,4 +3,5 @@ go 1.19
 use (
 	./day-08/trees
 	./day-09/nine
+	./day-10/ten
 )

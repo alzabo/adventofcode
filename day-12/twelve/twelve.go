@@ -1,10 +1,5 @@
 package twelve
 
-import (
-	"fmt"
-	"math/rand"
-)
-
 type WalkerHist map[[2]int]bool
 
 func (wh WalkerHist) Clone() WalkerHist {
@@ -15,145 +10,13 @@ func (wh WalkerHist) Clone() WalkerHist {
 	return newHist
 }
 
-type Walker struct {
-	ID        int
-	Ancestors []int
-	History   WalkerHist
-	Goal      Point
-}
-
-func (w *Walker) Steps() int {
-	return len(w.History) - 1
-}
-
-func (w *Walker) Walk(n *Node) []*Walker {
-	walkers := []*Walker{}
-	//
-	if w.Visited(n) {
-		fmt.Printf("visited node %v", n)
-		return walkers
-	}
-
-	//fmt.Println(w.History)
-
-	w.Visit(n)
-
-	//fmt.Println("walker", w.ID, "walked to", n.Position)
-	fmt.Println("walked to", n.Position)
-
-	if n.Position.X == w.Goal.X && n.Position.Y == w.Goal.Y {
-		fmt.Println("walker", w.ID, "reached goal in", w.Steps())
-		return walkers
-	}
-
-	if n.Position.X == 2 && n.Position.Y == 4 {
-		fmt.Printf("{2,4}: %v\n", n)
-	}
-
-	// Try to walk to the right if a path is available
-	if n.R != nil && !w.Visited(n.R) {
-		walkers = append(walkers, w.Walk(n.R)...)
-	}
-
-	for _, i := range [3]*Node{n.D, n.L, n.U} {
-		ww := w.Fork()
-		if i == nil || ww.Visited(i) {
-			continue
-		}
-		walkers = append(walkers, ww)
-		walkers = append(walkers, ww.Walk(i)...)
-	}
-
-	return walkers
-}
-
-func (w *Walker) Fork() *Walker {
-	ww := Walker{
-		ID:      rand.Int(),
-		History: w.History.Clone(),
-		Goal:    w.Goal,
-	}
-	ww.Ancestors = append(ww.Ancestors, w.ID)
-	//fmt.Println(ww.History)
-	return &ww
-}
-
-func (w *Walker) Visited(n *Node) bool {
-	_, ok := w.History[n.Position.Coords()]
-	return ok
-}
-
-func (w *Walker) Visit(n *Node) {
-	w.History[n.Position.Coords()] = true
-}
-
-type Point struct {
-	X int
-	Y int
-}
-
-func (p Point) Coords() [2]int {
-	return [2]int{p.X, p.Y}
-}
-
 type Map struct {
 	Grid  [][]int
-	Start Point
-	Goal  Point
-}
-
-type NodeMap struct {
-	Grid  [][]*Node
-	Start Point
-	Goal  Point
-}
-
-type Node struct {
-	Value    int
-	Position Point
-	U        *Node
-	R        *Node
-	D        *Node
-	L        *Node
-}
-
-func (n *Node) Link(m NodeMap) {
-	y := n.Position.Y
-	x := n.Position.X
-	traversible := func(o *Node) bool {
-		return n.Value+1 >= o.Value
-	}
-	if y > 0 {
-		up := m.Grid[y-1][x]
-		if traversible(up) {
-			n.U = up
-		}
-	}
-	if y < len(m.Grid)-1 {
-		down := m.Grid[y+1][x]
-		if traversible(down) {
-			n.D = down
-		}
-	}
-	if x > 0 {
-		left := m.Grid[y][x-1]
-		if traversible(left) {
-			n.L = left
-		}
-	}
-	if x < len(m.Grid[y])-1 {
-		right := m.Grid[y][x+1]
-		if traversible(right) {
-			n.R = right
-		}
-	}
+	Start [2]int
+	Goal  [2]int
 }
 
 type HeightMap map[rune]int
-
-type NodeTree struct {
-	Root *Node
-}
 
 func MakeHeightMap() HeightMap {
 	m := HeightMap{}
@@ -165,40 +28,27 @@ func MakeHeightMap() HeightMap {
 	return m
 }
 
-func MakeMap(input []string, hm HeightMap) NodeMap {
-	m := NodeMap{}
-
-	for i, j := range input {
-		row := []*Node{}
-		for k, l := range j {
-			v := 0
-			x := k
-			y := i
-			switch l {
+func MakeMapGrid(input []string, hm HeightMap) Map {
+	m := Map{
+		Grid: [][]int{},
+	}
+	for y, i := range input {
+		row := []int{}
+		for x, key := range i {
+			val := 0
+			switch key {
 			case 'S':
-				v = hm['a']
-				m.Start.Y = y
-				m.Start.X = x
+				m.Start = [2]int{x, y}
+				val = hm['a']
 			case 'E':
-				v = hm['z']
-				m.Goal.Y = y
-				m.Goal.X = x
+				m.Goal = [2]int{x, y}
+				val = hm['z']
 			default:
-				v = hm[l]
+				val = hm[key]
 			}
-			n := &Node{}
-			n.Value = v
-			n.Position.Y = y
-			n.Position.X = x
-			row = append(row, n)
+			row = append(row, val)
 		}
 		m.Grid = append(m.Grid, row)
-	}
-
-	for _, i := range m.Grid {
-		for _, n := range i {
-			n.Link(m)
-		}
 	}
 	return m
 }

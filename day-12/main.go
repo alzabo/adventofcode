@@ -15,7 +15,7 @@ type Walker struct {
 
 func walkm(m twelve.Map, start [2]int) []Walker {
 	seen := twelve.WalkerHist{}
-	queue := []Walker{{m.Start, 0}}
+	queue := []Walker{{start, 0}}
 	goals := []Walker{}
 
 	for len(queue) > 0 {
@@ -100,5 +100,26 @@ func main() {
 	// part 1
 	for _, i := range walkm(m, m.Start) {
 		fmt.Printf("part 1: %v\n", i)
+	}
+
+	// part 2
+	// the brute force way is to just start from
+	// each index w/ value 1
+	lowestPoints := [][2]int{}
+	for y, r := range m.Grid {
+		for x, v := range r {
+			if v == 1 {
+				lowestPoints = append(lowestPoints, [2]int{x, y})
+			}
+		}
+	}
+
+	p2res := []Walker{}
+	for _, s := range lowestPoints {
+		p2res = append(p2res, walkm(m, s)...)
+	}
+
+	for _, i := range p2res {
+		fmt.Printf("part 2: %v\n", i)
 	}
 }

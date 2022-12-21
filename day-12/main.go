@@ -13,7 +13,7 @@ type Walker struct {
 	Count int
 }
 
-func walkm(m twelve.Map) {
+func walkm(m twelve.Map, start [2]int) []Walker {
 	seen := twelve.WalkerHist{}
 	queue := []Walker{{m.Start, 0}}
 	goals := []Walker{}
@@ -21,7 +21,6 @@ func walkm(m twelve.Map) {
 	for len(queue) > 0 {
 		i := queue[0]
 		queue = queue[1:]
-
 		if _, ok := seen[i.Pos]; ok {
 			continue
 		}
@@ -34,9 +33,11 @@ func walkm(m twelve.Map) {
 
 		x := i.Pos[0]
 		y := i.Pos[1]
+		v := m.Grid[y][x]
+
 		traversible := func(o int) bool {
-			fmt.Println("other:", o, "this:", m.Grid[y][x], o-m.Grid[y][x] <= 1)
-			return o-m.Grid[y][x] <= 1
+			//fmt.Println("other:", o, "this:", v, v <= 1)
+			return o-v <= 1
 		}
 
 		if x > 0 {
@@ -69,9 +70,7 @@ func walkm(m twelve.Map) {
 		}
 	}
 
-	for _, g := range goals {
-		fmt.Printf("goal: %v", g)
-	}
+	return goals
 }
 
 func readInput(f string) ([]string, error) {
@@ -98,5 +97,8 @@ func main() {
 
 	m := twelve.MakeMapGrid(input, hm)
 
-	walkm(m)
+	// part 1
+	for _, i := range walkm(m, m.Start) {
+		fmt.Printf("part 1: %v\n", i)
+	}
 }

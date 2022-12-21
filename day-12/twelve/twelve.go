@@ -18,9 +18,12 @@ func (wh WalkerHist) Clone() WalkerHist {
 type Walker struct {
 	ID        int
 	Ancestors []int
-	Count     int
 	History   WalkerHist
 	Goal      Point
+}
+
+func (w *Walker) Steps() int {
+	return len(w.History) - 1
 }
 
 func (w *Walker) Walk(n *Node) []*Walker {
@@ -39,8 +42,12 @@ func (w *Walker) Walk(n *Node) []*Walker {
 	fmt.Println("walked to", n.Position)
 
 	if n.Position.X == w.Goal.X && n.Position.Y == w.Goal.Y {
-		fmt.Println("walker", w.ID, "reached goal in", w.Count)
+		fmt.Println("walker", w.ID, "reached goal in", w.Steps())
 		return walkers
+	}
+
+	if n.Position.X == 2 && n.Position.Y == 4 {
+		fmt.Printf("{2,4}: %v\n", n)
 	}
 
 	// Try to walk to the right if a path is available
@@ -63,7 +70,6 @@ func (w *Walker) Walk(n *Node) []*Walker {
 func (w *Walker) Fork() *Walker {
 	ww := Walker{
 		ID:      rand.Int(),
-		Count:   w.Count,
 		History: w.History.Clone(),
 		Goal:    w.Goal,
 	}
@@ -79,7 +85,6 @@ func (w *Walker) Visited(n *Node) bool {
 
 func (w *Walker) Visit(n *Node) {
 	w.History[n.Position.Coords()] = true
-	w.Count++
 }
 
 type Point struct {
@@ -163,26 +168,28 @@ func MakeHeightMap() HeightMap {
 func MakeMap(input []string, hm HeightMap) NodeMap {
 	m := NodeMap{}
 
-	for i := len(input) - 1; i >= 0; i-- {
+	for i, j := range input {
 		row := []*Node{}
-		for j, k := range input[i] {
-			var v int
-			switch k {
+		for k, l := range j {
+			v := 0
+			x := k
+			y := i
+			switch l {
 			case 'S':
 				v = hm['a']
-				m.Start.Y = i
-				m.Start.X = j
+				m.Start.Y = y
+				m.Start.X = x
 			case 'E':
 				v = hm['z']
-				m.Goal.Y = i
-				m.Goal.X = j
+				m.Goal.Y = y
+				m.Goal.X = x
 			default:
-				v = hm[k]
+				v = hm[l]
 			}
 			n := &Node{}
 			n.Value = v
-			n.Position.Y = i
-			n.Position.X = j
+			n.Position.Y = y
+			n.Position.X = x
 			row = append(row, n)
 		}
 		m.Grid = append(m.Grid, row)

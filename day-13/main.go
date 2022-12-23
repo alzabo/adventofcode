@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
-
-var listExpr = regexp.MustCompile(`(\[[^\]]*\])`)
 
 func load(p string) [][]byte {
 	b, err := os.ReadFile(p)
@@ -179,4 +177,35 @@ func main() {
 		}
 	}
 	fmt.Println("part 1:", sumInOrder)
+
+	allPackets := []any{
+		[]any{[]any{2}},
+		[]any{[]any{6}},
+	}
+	for _, i := range input {
+		b, a, _ := bytes.Cut(i, []byte("\n"))
+		allPackets = append(allPackets, parse(a), parse(b))
+	}
+	sort.Slice(allPackets, func(i, j int) bool {
+		return compare(allPackets[i].([]any), allPackets[j].([]any)) == -1
+	})
+	fmt.Println(allPackets[0])
+	fmt.Println(allPackets[len(allPackets)-1])
+
+	part2indices := []int{}
+	for i, j := range allPackets {
+		if compare(j.([]any), []any{[]any{2}}) == 0 {
+			part2indices = append(part2indices, i+1)
+		}
+		if compare(j.([]any), []any{[]any{6}}) == 0 {
+			part2indices = append(part2indices, i+1)
+		}
+	}
+
+	if len(part2indices) != 2 {
+		panic("should only have 2 indices for part 2")
+	}
+
+	fmt.Println("part 2:", part2indices[0]*part2indices[1])
+
 }

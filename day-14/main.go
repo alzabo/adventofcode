@@ -75,13 +75,13 @@ func (r *Reservoir) AddFloor() {
 }
 
 func (r Reservoir) String() string {
-	rows := []string{}
+	rows := []string{"Visualization starts at column 300"}
 	for y, i := range r.Grid {
 		r := []string{}
 		for x, j := range i {
-			//if x < 480 {
-			//	continue
-			//}
+			if x < 300 {
+				continue
+			}
 			if y == 0 && x == 500 {
 				r = append(r, "+")
 				continue

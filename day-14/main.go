@@ -200,7 +200,7 @@ func main() {
 
 	res1 := Reservoir{}
 	res1.AddRocks(input)
-	fmt.Println(res1.Grid[0][0] == Air)
+	//fmt.Println(res1.Grid[0][0] == Air)
 	grains1 := dropSand1(&res1)
 	//fmt.Println(res1)
 	fmt.Println("part 1:", grains1)

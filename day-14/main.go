@@ -17,7 +17,7 @@ const (
 type Space int
 
 type Reservoir struct {
-	Grid [175][600]Space
+	Grid [175][700]Space
 }
 
 func (r *Reservoir) AddRocks(s [][]byte) {
@@ -58,14 +58,30 @@ func (r *Reservoir) AddRocks(s [][]byte) {
 	}
 }
 
+func (r *Reservoir) AddFloor() {
+	lowest := 0
+	for y, i := range r.Grid {
+		for _, v := range i {
+			if v == Rock {
+				lowest = y
+				continue
+			}
+		}
+	}
+
+	for i, _ := range r.Grid[lowest+2] {
+		r.Grid[lowest+2][i] = Rock
+	}
+}
+
 func (r Reservoir) String() string {
-	rows := []string{"## Visualization starts at column 480"}
+	rows := []string{}
 	for y, i := range r.Grid {
 		r := []string{}
 		for x, j := range i {
-			if x < 480 {
-				continue
-			}
+			//if x < 480 {
+			//	continue
+			//}
 			if y == 0 && x == 500 {
 				r = append(r, "+")
 				continue
@@ -93,16 +109,21 @@ func dropSand1(r *Reservoir) int {
 	sY := source[1]
 
 	for {
-		fmt.Println("sX", sX, "sY", sY, r.Grid[sY][sX] == Sand)
-		fmt.Println("sX", sX, "sY+1", sY+1, "Air:", r.Grid[sY+1][sX] == Air)
+		//fmt.Println("sX", sX, "sY", sY, r.Grid[sY][sX] == Sand)
+		//fmt.Println("sX", sX, "sY+1", sY+1, "Air:", r.Grid[sY+1][sX] == Air)
 
 		// Out of bounds?
 		if sY >= len(r.Grid)-2 {
 			break
 		}
 
+		// it's full
+		if r.Grid[source[1]][source[0]] == Sand {
+			break
+		}
+
 		if r.Grid[sY+1][sX] == Air {
-			fmt.Println("Got here!")
+			//fmt.Println("Got here!")
 			sY++ // "fall" without setting state in the grid
 			continue
 		}
@@ -124,6 +145,7 @@ func dropSand1(r *Reservoir) int {
 		r.Grid[sY][sX] = Sand
 
 		sandCount++
+
 		sX = source[0]
 		sY = source[1]
 	}
@@ -176,10 +198,17 @@ func readInput(f string) [][]byte {
 func main() {
 	input := readInput("input")
 
-	res := Reservoir{}
-	res.AddRocks(input)
-	fmt.Println(res.Grid[0][0] == Air)
-	grains := dropSand1(&res)
-	fmt.Println(res)
-	fmt.Println("part 1:", grains)
+	res1 := Reservoir{}
+	res1.AddRocks(input)
+	fmt.Println(res1.Grid[0][0] == Air)
+	grains1 := dropSand1(&res1)
+	//fmt.Println(res1)
+	fmt.Println("part 1:", grains1)
+
+	res2 := Reservoir{}
+	res2.AddRocks(input)
+	res2.AddFloor()
+	grains2 := dropSand1(&res2)
+	fmt.Println(res2)
+	fmt.Println("part 2:", grains2)
 }

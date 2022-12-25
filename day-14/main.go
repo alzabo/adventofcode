@@ -69,7 +69,7 @@ func (r *Reservoir) AddFloor() {
 		}
 	}
 
-	for i, _ := range r.Grid[lowest+2] {
+	for i := range r.Grid[lowest+2] {
 		r.Grid[lowest+2][i] = Rock
 	}
 }

@@ -89,8 +89,12 @@ func calc(m ValveMap) {
 			continue
 		}
 
-		if i.time == 0 && i.count > 0 {
+		// prune paths that won't yield the highest scores
+		if i.count < 700 && i.time < 24 {
+			continue
+		}
 
+		if i.time == 0 && i.count > 0 {
 			_, ok := scores[i.count]
 			if !ok && i.count > high {
 				high = i.count

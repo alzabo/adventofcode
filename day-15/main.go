@@ -68,15 +68,73 @@ func readInput(n string) [][]byte {
 }
 
 func calc(m ValveMap) {
-	start := "AA"
-	for _, i := range m[start].Connections {
-		for _, j := range i.Connections {
-			fmt.Println("2:", j)
-			for _, k := range j.Connections {
-				fmt.Println("3:", k)
+	st := []struct {
+		valve *Valve
+		count int
+		time  int
+		op    map[string]struct{}
+		hist  map[string]int
+	}{
+		{m["AA"], 0, 30, map[string]struct{}{}, map[string]int{"AA": 0}},
+	}
+
+	scores := map[int]struct{}{}
+	high := 0
+
+	for len(st) > 0 {
+		i := st[len(st)-1]
+		st = st[:len(st)-1]
+
+		if i.time < 0 {
+			continue
+		}
+
+		if i.time == 0 && i.count > 0 {
+
+			_, ok := scores[i.count]
+			if !ok && i.count > high {
+				high = i.count
+				fmt.Println("high:", high, "timer:", i.time, "scored:", i.count, "opened:", i.op, "visited:", i.hist)
 			}
+			scores[i.count] = struct{}{}
+			continue
+		}
+
+		c := i.hist[i.valve.ID]
+		if c > 1 {
+			continue
+		}
+		i.hist[i.valve.ID] += 1
+
+		_, ok := i.op[i.valve.ID]
+		if i.valve.Value > 0 && !ok {
+			i.op[i.valve.ID] = struct{}{}
+			i.time -= 1
+			i.count += i.valve.Value * i.time
+		}
+
+		for _, c := range i.valve.Connections {
+			n := i
+			n.count = i.count
+			n.valve = c
+			n.time = i.time - 1
+
+			opCp := map[string]struct{}{}
+			for k := range i.op {
+				opCp[k] = struct{}{}
+			}
+			n.op = opCp
+
+			histCp := map[string]int{}
+			for k, v := range i.hist {
+				histCp[k] = v
+			}
+			n.hist = histCp
+
+			st = append(st, n)
 		}
 	}
+	//fmt.Println(scores)
 }
 
 func main() {

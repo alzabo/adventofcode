@@ -154,6 +154,9 @@ type team struct {
 	op    map[string]struct{}
 }
 
+
+// https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0pewzt/?utm_source=share&utm_medium=web2x&context=3
+// https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0rrokm/?utm_source=share&utm_medium=web2x&context=3
 func calc2(m ValveMap) {
 	st := []team{{
 		hum:  actor{m["AA"], map[string]int{"AA": 0}},

@@ -141,141 +141,87 @@ func calc(m ValveMap) {
 	//fmt.Println(scores)
 }
 
-type actor struct {
-	pos  *Valve
-	hist map[string]int
+type ValveEdge struct {
+	Start string
+	End   string
+	Value int
+	Cost  int
 }
-
-type team struct {
-	hum   actor
-	ele   actor
-	score int
-	time  int
-	op    map[string]struct{}
-}
-
 
 // https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0pewzt/?utm_source=share&utm_medium=web2x&context=3
 // https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0rrokm/?utm_source=share&utm_medium=web2x&context=3
+// https://en.wikipedia.org/wiki/Best-first_search
+// https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+// https://en.wikipedia.org/wiki/A*_search_algorithm
 func calc2(m ValveMap) {
-	st := []team{{
-		hum:  actor{m["AA"], map[string]int{"AA": 0}},
-		ele:  actor{m["AA"], map[string]int{"AA": 0}},
-		op:   map[string]struct{}{},
-		time: 26,
-	}}
-
-	high := 0
-
-	for len(st) > 0 {
-		i := st[0]
-		st = st[1:]
-
-		//fmt.Println("ok...", high, "hum", i.hum, "e", i.ele)
-
-		if i.score > high {
-			high = i.score
-			fmt.Println("high", high, "team", i)
+	filtered := ValveMap{"AA": m["AA"]}
+	for _, v := range m {
+		if v.Value > 0 {
+			filtered[v.ID] = v
+			fmt.Println(v)
 		}
+	}
 
-		// prune paths that won't yield the highest scores
-		if i.score < 300 && i.time < 22 {
-			continue
-		}
+	ve := []ValveEdge{}
+	for _, v := range filtered {
+		ve = append(ve, ValveEdge{
+			Start: "AA",
+			End:   v.ID,
+			Value: v.Value,
+			Cost:  Dijkstra(filtered["AA"], v),
+		})
+	}
+	fmt.Printf("%v\n", ve)
+}
 
-		if i.time < 0 {
-			continue
-		}
+type DijkstraQItem struct {
+	Valve *Valve
+	Prev  *DijkstraQItem
+	Cost  int
+}
 
-		//
+// Because the cost of each path is always 1, we don't have to worry about finding
+// a lower cost route or tracking the previous vertex
+func Dijkstra(v1, v2 *Valve) int {
+	q := []DijkstraQItem{{v1, nil, 0}}
+	seen := map[string]bool{}
 
-		if c := i.ele.hist[i.ele.pos.ID]; c > 1 {
-			continue
-		}
-		i.ele.hist[i.ele.pos.ID] += 1
+	for len(q) > 0 {
+		qi := q[0]
+		q = q[1:]
 
-		_, eok := i.op[i.ele.pos.ID]
-		if i.ele.pos.Value > 0 && !eok {
-			i.op[i.ele.pos.ID] = struct{}{}
-			i.time -= 1
-			i.score += i.ele.pos.Value * i.time
-		}
+		seen[qi.Valve.ID] = true
 
-		if c := i.hum.hist[i.hum.pos.ID]; c > 1 {
-			continue
-		}
-		i.hum.hist[i.hum.pos.ID] += 1
+		for _, c := range qi.Valve.Connections {
+			if c.ID == v2.ID {
+				return qi.Cost + 2
+			}
 
-		_, hok := i.op[i.hum.pos.ID]
-		if i.hum.pos.Value > 0 && !hok {
-			i.op[i.hum.pos.ID] = struct{}{}
-			i.time -= 1
-			i.score += i.hum.pos.Value * i.time
-		}
+			if _, ok := seen[c.ID]; ok {
+				continue
+			}
 
-		for _, ec := range i.ele.pos.Connections {
-			for _, hc := range i.hum.pos.Connections {
-				n := i
-				n.ele.pos = ec
-				n.hum.pos = hc
-				n.time = i.time - 1
+			n := DijkstraQItem{
+				Valve: c,
+				Prev:  nil,
+				Cost:  qi.Cost + 1,
+			}
 
-				//n.ele.hist = map[string]int{}
-				//for k, v := range i.ele.hist {
-				//	n.ele.hist[k] = v
-				//}
-				//n.hum.hist = map[string]int{}
-				//for k, v := range i.hum.hist {
-				//	n.hum.hist[k] = v
-				//}
-				st = append(st, n)
+			if len(q) == 0 {
+				q = append(q, n)
+			} else {
+				idx := 0
+				for i, qq := range q {
+					idx = i
+					if qq.Cost > n.Cost {
+						break
+					}
+				}
+				q = append(q[:idx], append([]DijkstraQItem{n}, q[idx:]...)...)
 			}
 		}
-		//
-
-		//
-
-		//as := []actor{
-		//	i.ele,
-		//	i.hum,
-		//}
-
-		//for len(as) > 0 {
-		//	a := as[len(as)-1]
-		//	as = as[:len(as)-1]
-
-		//	c := a.hist[a.pos.ID]
-		//	if c > 1 {
-		//		continue
-		//	}
-		//	a.hist[a.pos.ID] += 1
-
-		//	_, ok := i.op[a.pos.ID]
-		//	if a.pos.Value > 0 && !ok {
-		//		i.op[a.pos.ID] = struct{}{}
-		//		a.time -= 1
-		//		i.score += a.pos.Value * a.time
-		//	}
-
-		//	for _, c := range a.pos.Connections {
-		//		n := a
-		//		n.pos = c
-		//		n.time = a.time - 1
-
-		//		histCp := map[string]int{}
-		//		for k, v := range a.hist {
-		//			histCp[k] = v
-		//		}
-		//		n.hist = histCp
-
-		//		as = append(as, n)
-		//	}
-
-		//}
-
-		//for _, a := range []*actor{&i.hum, &i.ele} {
 	}
-	//fmt.Println(scores)
+	return 0
 }
 
 func main() {

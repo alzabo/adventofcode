@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -148,6 +149,12 @@ type ValveEdge struct {
 	Cost  int
 }
 
+type actorState struct {
+	name string
+	time int
+	pos  string
+}
+
 // https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0pewzt/?utm_source=share&utm_medium=web2x&context=3
 // https://www.reddit.com/r/adventofcode/comments/zn6k1l/comment/j0rrokm/?utm_source=share&utm_medium=web2x&context=3
 // https://en.wikipedia.org/wiki/Best-first_search
@@ -162,16 +169,75 @@ func calc2(m ValveMap) {
 		}
 	}
 
-	ve := []ValveEdge{}
-	for _, v := range filtered {
-		ve = append(ve, ValveEdge{
-			Start: "AA",
-			End:   v.ID,
-			Value: v.Value,
-			Cost:  Dijkstra(filtered["AA"], v),
-		})
+	fmt.Println("")
+
+	total := 0
+	actors := []*actorState{
+		{"Ele", 26, "AA"},
+		{"Hum", 26, "AA"},
 	}
-	fmt.Printf("%v\n", ve)
+
+	act := func(a *actorState) int {
+		ve := []ValveEdge{}
+		for _, v := range filtered {
+			ve = append(ve, ValveEdge{
+				Start: a.pos,
+				End:   v.ID,
+				Value: v.Value,
+				Cost:  Dijkstra(filtered[a.pos], v),
+			})
+		}
+
+		// sort only by the score
+		sort.Slice(ve, func(i, j int) bool {
+			s1, _ := score(ve[i], a.time)
+			s2, _ := score(ve[j], a.time)
+			return s1 < s2
+		})
+
+		//sort.Slice(ve, func(i, j int) bool {
+		//	return ve[i].Value-ve[i].Cost < ve[j].Value-ve[j].Cost
+		//})
+
+		for i := len(ve) - 1; i >= 0; i-- {
+			if ve[i].Cost <= a.time {
+				//if ve[i].Cost < 3 {
+				//	continue
+				//}
+				s, r := score(ve[i], a.time)
+				fmt.Printf("%v opens valve %v for score %v; %v remains\n", a, ve[i].End, s, r)
+				a.pos = ve[i].End
+				filtered[ve[i].End].Value = 0
+				a.time = r
+				return s
+			}
+		}
+
+		fmt.Printf("%v could not open any valve\n", a)
+		a.time = 0
+		return 0
+	}
+
+	for {
+		if actors[0].time == 0 && actors[1].time == 0 {
+			break
+		}
+		if actors[0].time > 0 {
+			total += act(actors[0])
+		}
+		if actors[1].time > 0 {
+			total += act(actors[1])
+		}
+	}
+
+	fmt.Println("total", total)
+
+}
+
+func score(ve ValveEdge, t int) (score int, remain int) {
+	remain = t - ve.Cost
+	score = ve.Value * remain
+	return
 }
 
 type DijkstraQItem struct {
@@ -225,7 +291,7 @@ func Dijkstra(v1, v2 *Valve) int {
 }
 
 func main() {
-	v := parseValves(readInput("input"))
+	v := parseValves(readInput("sample"))
 	//fmt.Printf("%v\n", v)
 	//for _, vv := range v {
 	//	fmt.Printf("%v\n", vv)

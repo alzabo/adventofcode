@@ -180,12 +180,16 @@ func calc2(m ValveMap) {
 	act := func(a *actorState) int {
 		ve := []ValveEdge{}
 		for _, v := range filtered {
-			ve = append(ve, ValveEdge{
+			e := ValveEdge{
 				Start: a.pos,
 				End:   v.ID,
 				Value: v.Value,
 				Cost:  Dijkstra(filtered[a.pos], v),
-			})
+			}
+			if e.Value == 0 {
+				continue
+			}
+			ve = append(ve, e)
 		}
 
 		// sort only by the score
@@ -199,20 +203,49 @@ func calc2(m ValveMap) {
 		//	return ve[i].Value-ve[i].Cost < ve[j].Value-ve[j].Cost
 		//})
 
+		// sort by cost, value
+		sort.Slice(ve, func(i, j int) bool {
+			if ve[i].Cost == ve[j].Cost {
+				return ve[i].Value < ve[j].Value
+			}
+			return ve[i].Cost > ve[j].Cost
+		})
+
+		fmt.Println("actor", a, "moving...")
+
+		for _, i := range ve {
+			fmt.Println(i)
+		}
+
+		var toOpen ValveEdge
+		var maxCost int
 		for i := len(ve) - 1; i >= 0; i-- {
-			if ve[i].Cost <= a.time {
-				//if ve[i].Cost < 3 {
+			if ve[i].Cost < a.time {
+				if maxCost == 0 {
+					//toOpen = ve[i]
+					maxCost = ve[i].Cost + 1
+				}
+				if ve[i].Cost <= maxCost {
+					if ve[i].Value-toOpen.Value > 1 {
+						toOpen = ve[i]
+					}
+				}
+
+				//if ve[i].Cost > 6 {
 				//	continue
 				//}
-				s, r := score(ve[i], a.time)
-				fmt.Printf("%v opens valve %v for score %v; %v remains\n", a, ve[i].End, s, r)
-				a.pos = ve[i].End
-				filtered[ve[i].End].Value = 0
-				a.time = r
-				return s
+
 			}
 		}
 
+		if toOpen.Value > 0 {
+			s, r := score(toOpen, a.time)
+			fmt.Printf("%v opens valve %v for score %v; %v remains\n", a, toOpen.End, s, r)
+			a.pos = toOpen.End
+			filtered[toOpen.End].Value = 0
+			a.time = r
+			return s
+		}
 		fmt.Printf("%v could not open any valve\n", a)
 		a.time = 0
 		return 0
@@ -222,11 +255,18 @@ func calc2(m ValveMap) {
 		if actors[0].time == 0 && actors[1].time == 0 {
 			break
 		}
-		if actors[0].time > 0 {
-			total += act(actors[0])
-		}
+
+		// The actor with the most time remaining will act first.
+		// this was something someone mentioned in a comment on reddit
+		sort.Slice(actors, func(i, j int) bool {
+			return actors[i].time < actors[j].time
+		})
+
 		if actors[1].time > 0 {
 			total += act(actors[1])
+		}
+		if actors[0].time > 0 {
+			total += act(actors[0])
 		}
 	}
 
@@ -291,7 +331,7 @@ func Dijkstra(v1, v2 *Valve) int {
 }
 
 func main() {
-	v := parseValves(readInput("sample"))
+	v := parseValves(readInput("input"))
 	//fmt.Printf("%v\n", v)
 	//for _, vv := range v {
 	//	fmt.Printf("%v\n", vv)

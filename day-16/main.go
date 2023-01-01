@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	combinations "github.com/mxschmitt/golang-combinations"
 )
 
 var (
@@ -25,6 +27,8 @@ type Valve struct {
 //}
 
 type ValveMap map[string]*Valve
+
+type OpenedValves map[string]struct{}
 
 func parseValves(b [][]byte) ValveMap {
 	valves := ValveMap{}
@@ -68,18 +72,21 @@ func readInput(n string) [][]byte {
 	return bytes.Split(i, []byte("\n"))
 }
 
-func calc(m ValveMap) {
+func calc11(es []ValveEdge) {
+
+}
+
+func calc(m ValveMap, t int, op OpenedValves) int {
 	st := []struct {
 		valve *Valve
 		count int
 		time  int
-		op    map[string]struct{}
+		op    OpenedValves
 		hist  map[string]int
 	}{
-		{m["AA"], 0, 30, map[string]struct{}{}, map[string]int{"AA": 0}},
+		{m["AA"], 0, t, op, map[string]int{"AA": 0}},
 	}
 
-	scores := map[int]struct{}{}
 	high := 0
 
 	for len(st) > 0 {
@@ -91,17 +98,15 @@ func calc(m ValveMap) {
 		}
 
 		// prune paths that won't yield the highest scores
-		if i.count < 350 && i.time < 24 {
+		if i.count < 350 && i.time < t-6 {
 			continue
 		}
 
 		if i.time == 0 && i.count > 0 {
-			_, ok := scores[i.count]
-			if !ok && i.count > high {
+			if i.count > high {
 				high = i.count
 				fmt.Println("high:", high, "timer:", i.time, "scored:", i.count, "opened:", i.op, "visited:", i.hist)
 			}
-			scores[i.count] = struct{}{}
 			continue
 		}
 
@@ -140,6 +145,7 @@ func calc(m ValveMap) {
 		}
 	}
 	//fmt.Println(scores)
+	return high
 }
 
 type ValveEdge struct {
@@ -191,6 +197,11 @@ func calc2(m ValveMap) {
 			}
 			ve = append(ve, e)
 		}
+
+		// TODO: not here, but re-write
+		ccombo := combinations.Combinations(ve, 7)
+
+		fmt.Println(ccombo)
 
 		// sort only by the score
 		sort.Slice(ve, func(i, j int) bool {
@@ -331,10 +342,70 @@ func Dijkstra(v1, v2 *Valve) int {
 }
 
 func main() {
-	v := parseValves(readInput("input"))
+	v := parseValves(readInput("sample"))
+
+	scores := []int{}
+	nonZero := []string{}
+	//filtered := ValveMap{"AA": v["AA"]}
+	for _, v := range v {
+		if v.Value > 0 {
+			nonZero = append(nonZero, v.ID)
+		}
+	}
+
+	for x, i := range combinations.All(nonZero) {
+		if len(i) < 6 || len(i) > 9 {
+			continue
+		}
+		o1 := OpenedValves{}
+		o2 := OpenedValves{}
+		p := sort.StringSlice(i)
+		for _, z := range nonZero {
+			if p.Search(z) != len(p) {
+				o1[z] = struct{}{}
+			} else {
+				o2[z] = struct{}{}
+			}
+		}
+		s1 := calc(v, 26, o1)
+		s2 := calc(v, 26, o2)
+		score := s1 + s2
+		scores = append(scores, score)
+
+		fmt.Println("x:", x, "got score:", score)
+
+		//fmt.Println("o1:", o1, "o2:", o2, "lens:", len(o1)+len(o2))
+	}
+
+	sort.Slice(scores, func(i, j int) bool {
+		return scores[i] < scores[j]
+	})
+
+	fmt.Println("")
+	fmt.Println("final score is...", scores[len(scores)-1])
+
+	//conns := v["AA"].Connections
+	//fmt.Println(conns)
+	//combo := combinations.Combinations(v["AA"].Connections, -1)
+
+	//for _, c2 := range combo {
+	//	v2 := ValveMap{}
+	//	for k, v := range v {
+	//		v2[k] = v
+	//	}
+	//	v2["AA"].Connections = c2
+	//	fmt.Println(calc(v2, 26))
+	//}
+
+	//fmt.Println(combo)
+
 	//fmt.Printf("%v\n", v)
 	//for _, vv := range v {
 	//	fmt.Printf("%v\n", vv)
 	//}
-	calc2(v)
+	//calc2(v)
+
+	// part 1
+	//part1 := calc(v, 30, OpenedValves{})
+	//fmt.Println("part 1", part1)
 }

@@ -5,4 +5,5 @@ use (
 	./day-09/nine
 	./day-10/ten
 	./day-12/twelve
+	./day-16
 )

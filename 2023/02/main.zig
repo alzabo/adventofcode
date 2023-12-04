@@ -10,24 +10,25 @@ pub fn main() !void {
 
     var buf_reader = std.io.bufferedReader(file.reader());
     const in_stream = buf_reader.reader();
-    try part1(in_stream);
 
-    try file.seekTo(0);
-
-    try part2(in_stream);
-}
-
-fn part1(reader: anytype) !void {
     var buf: [1024]u8 = undefined;
     var ct1: u32 = 0;
+    var ct2: u32 = 0;
 
-    while (try reader.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+    while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
         const game = try parseLine(line);
         if (game.red <= 12 and game.green <= 13 and game.blue <= 14) {
             ct1 += game.id;
         }
+        ct2 += game.red * game.green * game.blue;
     }
+
     info("part1: {d}", .{ct1});
+    info("part2: {d}", .{ct2});
+}
+
+fn part1(reader: anytype) !void {
+    _ = reader;
 }
 
 fn part2(reader: anytype) !void {
@@ -53,9 +54,9 @@ test "parse line" {
 
 const Game = struct {
     id: u8,
-    red: u8,
-    blue: u8,
-    green: u8,
+    red: u32,
+    blue: u32,
+    green: u32,
 };
 
 fn parseLine(line: []const u8) !Game {

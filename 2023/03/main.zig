@@ -5,8 +5,11 @@ const expect = std.testing.expect;
 const assert = std.debug.assert;
 const ArenaAllocator = std.heap.ArenaAllocator;
 
+// TODO: What is this number and where does it come from?
+const magic_invalid_number: u8 = 0b10101010;
+
 pub fn main() !void {
-    var file = try std.fs.cwd().openFile("sample.txt", .{});
+    var file = try std.fs.cwd().openFile("input.txt", .{});
     defer file.close();
 
     var buf_reader = std.io.bufferedReader(file.reader());
@@ -30,8 +33,9 @@ pub fn main() !void {
     for (matrix, 0..) |row, x| {
         for (row, 0..) |c, y| {
             switch (c) {
-                '0'...'9', '.', '\n' => {},
+                '0'...'9', '.', '\n', magic_invalid_number => {},
                 else => {
+                    //std.debug.print("x: {d} y: {d} m: {c} c: {c}\n", .{ x, y, matrix[x][y], c });
                     const _x: u5 = @truncate(x);
                     const _y: u5 = @truncate(y);
                     try find_neighboring_numbers(_x, _y, matrix, &map);
@@ -73,7 +77,7 @@ fn find_neighboring_numbers(x: i8, y: i8, matrix: anytype, map: anytype) !void {
 
         var buf: [3]u8 = [_]u8{ 0, 0, 0 };
         var bufidx: usize = 0;
-        std.debug.print("considering... ux: {d} uy: {d}; \n", .{ ux, uy });
+        //std.debug.print("considering... ux: {d} uy: {d}; \n", .{ ux, uy });
         switch (matrix[ux][uy]) {
             '0'...'9' => {
                 const _x: usize = ux;
@@ -125,8 +129,8 @@ fn find_neighboring_numbers(x: i8, y: i8, matrix: anytype, map: anytype) !void {
 
 test "lookaround" {
     const m = [3][8]u8{
-        [_]u8{ '1', '2', '3', '.', '.', '.', '.', '.' },
-        [_]u8{ '.', '%', '.', '.', '=', '.', '.', '.' },
+        [_]u8{ '1', '2', '3', '.', '.', '.', '8', '.' },
+        [_]u8{ '.', '%', '.', '.', '=', '.', '.', '7' },
         [_]u8{ '.', '.', '.', '4', '5', '6', '.', '.' },
     };
     var map = std.AutoHashMap([2]usize, u16).init(std.testing.allocator);
@@ -144,15 +148,19 @@ test "lookaround" {
         unreachable;
     }
 
-    //var iter = map.iterator();
-    //while (iter.next()) |kv| {
-    //    std.debug.print("x: {d} y: {d} val: {d}\n", .{ kv.key_ptr[0], kv.key_ptr[1], kv.value_ptr });
-    //}
-
     try find_neighboring_numbers(1, 4, m, &map);
     if (map.get([2]usize{ 2, 3 })) |r| {
         try expect(r == 456);
     } else {
         unreachable;
+    }
+
+    if (map.get([2]usize{ 0, 8 })) |_| {
+        unreachable;
+    }
+
+    var iter = map.iterator();
+    while (iter.next()) |kv| {
+        std.debug.print("x: {d} y: {d} val: {d}\n", .{ kv.key_ptr[0], kv.key_ptr[1], kv.value_ptr });
     }
 }

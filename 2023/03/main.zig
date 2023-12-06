@@ -56,20 +56,108 @@ pub fn main() !void {
         ct1 += kv.value_ptr.*;
     }
     info("part1: {d}", .{ct1});
+
+    var ct2: u64 = 0;
+    for (matrix, 0..) |row, x| {
+        for (row, 0..) |c, y| {
+            switch (c) {
+                '*' => {
+                    //std.debug.print("x: {d} y: {d} m: {c} c: {c}\n", .{ x, y, matrix[x][y], c });
+                    // TODO: Get a better sense of how to do this properly rather than just
+                    // messing with it until it works
+                    const _x: u8 = @truncate(x);
+                    assert(x == _x);
+                    const _y: u8 = @truncate(y);
+                    assert(y == _y);
+                    //std.debug.print("x: {d} y: {d} _x: {d} _y: {d} m: {c} c: {c}\n", .{ x, y, _x, _y, matrix[x][y], c });
+
+                    ct2 += try product_of_two_neighboring_numbers(_x, _y, matrix);
+                },
+                else => {},
+            }
+        }
+    }
+    info("part2: {d}", .{ct2});
+}
+
+fn product_of_two_neighboring_numbers(x: i16, y: i16, matrix: anytype) !u32 {
+    var seen: [2][2]usize = undefined;
+    var numbers: [2]u32 = [_]u32{ 0, 0 };
+    var nindex: usize = 0;
+
+    coords: for (neighbor_coords) |d| {
+        if (x + d[0] < 0 or y + d[1] < 0) {
+            continue;
+        }
+        const ux: usize = @intCast(x + d[0]);
+        const uy: usize = @intCast(y + d[1]);
+        if (ux > matrix.len or uy > matrix[0].len) {
+            continue;
+        }
+
+        var buf: [3]u8 = [_]u8{ 0, 0, 0 };
+        var bufidx: usize = 0;
+        //std.debug.print("considering... ux: {d} uy: {d}; \n", .{ ux, uy });
+        switch (matrix[ux][uy]) {
+            '0'...'9' => {
+                const _x: usize = ux;
+                var _y: usize = uy;
+                //std.debug.print("_x: {d}; _y: {d}\n", .{ _x, _y });
+                // find the first digit
+                while (_y > 0) {
+                    switch (matrix[_x][_y - 1]) {
+                        '0'...'9' => {
+                            _y -= 1;
+                        },
+                        else => {
+                            break;
+                        },
+                    }
+                }
+                const start = [_]usize{ _x, _y };
+                for (seen) |v| {
+                    if (v[0] == start[0] and v[1] == start[1]) {
+                        continue :coords;
+                    }
+                }
+                //std.debug.print("_x: {d}; _y: {d}\n", .{ _x, _y });
+
+                while (_y < matrix[0].len) : (_y += 1) {
+                    const val = matrix[_x][_y];
+                    switch (val) {
+                        '0'...'9' => {
+                            buf[bufidx] = val;
+                            bufidx += 1;
+                        },
+                        else => {
+                            break;
+                        },
+                    }
+                }
+                const end: usize = std.mem.indexOfScalar(u8, &buf, 0) orelse buf.len;
+
+                //std.debug.print("buf: {b}\n", .{buf[0..end]});
+                const value = try parseInt(u32, buf[0..end], 10);
+                buf = [_]u8{ 0, 0, 0 };
+                bufidx = 0;
+
+                //std.debug.print("value: {d} from: x: {d} y: {d}\n", .{ value, x, y });
+                numbers[nindex] = value;
+                seen[nindex] = start;
+                nindex += 1;
+            },
+            else => {},
+        }
+    }
+    //std.debug.print("values: {d} from: x: {d} y: {d}\n", .{ numbers, x, y });
+    if (numbers[0] == 0 or numbers[1] == 0) {
+        return 0;
+    }
+    return numbers[0] * numbers[1];
 }
 
 fn find_neighboring_numbers(x: i16, y: i16, matrix: anytype, map: anytype) !void {
-    const neighbors = [_][2]i32{
-        [_]i32{ 1, 0 }, // down
-        [_]i32{ -1, 0 }, // up
-        [_]i32{ 0, 1 }, // right
-        [_]i32{ 0, -1 }, // left
-        [_]i32{ 1, 1 }, // down, right
-        [_]i32{ 1, -1 }, // down, left
-        [_]i32{ -1, 1 }, // up, right
-        [_]i32{ -1, -1 }, // up, left
-    };
-    for (neighbors) |d| {
+    for (neighbor_coords) |d| {
         const ix = x + d[0];
         const iy = y + d[1];
         if (ix < 0 or iy < 0) {
@@ -132,6 +220,17 @@ fn find_neighboring_numbers(x: i16, y: i16, matrix: anytype, map: anytype) !void
         }
     }
 }
+
+const neighbor_coords = [_][2]i32{
+    [_]i32{ 1, 0 }, // down
+    [_]i32{ -1, 0 }, // up
+    [_]i32{ 0, 1 }, // right
+    [_]i32{ 0, -1 }, // left
+    [_]i32{ 1, 1 }, // down, right
+    [_]i32{ 1, -1 }, // down, left
+    [_]i32{ -1, 1 }, // up, right
+    [_]i32{ -1, -1 }, // up, left
+};
 
 test "lookaround" {
     const m = [3][8]u8{

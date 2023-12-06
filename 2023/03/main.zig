@@ -36,8 +36,14 @@ pub fn main() !void {
                 '0'...'9', '.', '\n', magic_invalid_number => {},
                 else => {
                     //std.debug.print("x: {d} y: {d} m: {c} c: {c}\n", .{ x, y, matrix[x][y], c });
-                    const _x: u5 = @truncate(x);
-                    const _y: u5 = @truncate(y);
+                    // TODO: Get a better sense of how to do this properly rather than just
+                    // messing with it until it works
+                    const _x: u8 = @truncate(x);
+                    assert(x == _x);
+                    const _y: u8 = @truncate(y);
+                    assert(y == _y);
+                    //std.debug.print("x: {d} y: {d} _x: {d} _y: {d} m: {c} c: {c}\n", .{ x, y, _x, _y, matrix[x][y], c });
+
                     try find_neighboring_numbers(_x, _y, matrix, &map);
                 },
             }
@@ -52,7 +58,7 @@ pub fn main() !void {
     info("part1: {d}", .{ct1});
 }
 
-fn find_neighboring_numbers(x: i8, y: i8, matrix: anytype, map: anytype) !void {
+fn find_neighboring_numbers(x: i16, y: i16, matrix: anytype, map: anytype) !void {
     const neighbors = [_][2]i32{
         [_]i32{ 1, 0 }, // down
         [_]i32{ -1, 0 }, // up
@@ -100,7 +106,7 @@ fn find_neighboring_numbers(x: i8, y: i8, matrix: anytype, map: anytype) !void {
                 }
                 //std.debug.print("_x: {d}; _y: {d}\n", .{ _x, _y });
 
-                while (_y <= matrix[0].len) : (_y += 1) {
+                while (_y < matrix[0].len) : (_y += 1) {
                     const val = matrix[_x][_y];
                     switch (val) {
                         '0'...'9' => {
@@ -119,7 +125,7 @@ fn find_neighboring_numbers(x: i8, y: i8, matrix: anytype, map: anytype) !void {
                 buf = [_]u8{ 0, 0, 0 };
                 bufidx = 0;
 
-                std.debug.print("value: {d} x: {d} y: {d}\n", .{ value, start[0], start[1] });
+                std.debug.print("value: {d} x: {d} y: {d} from: x: {d} y: {d}\n", .{ value, start[0], start[1], x, y });
                 try map.put(start, value);
             },
             else => {},

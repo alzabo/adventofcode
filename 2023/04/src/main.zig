@@ -4,15 +4,20 @@ const parseInt = std.fmt.parseInt;
 const expect = std.testing.expect;
 const assert = std.debug.assert;
 const ArenaAllocator = std.heap.ArenaAllocator;
+const ArrayList = std.ArrayList;
 
 pub fn main() !void {
-    var file = try std.fs.cwd().openFile("input.txt", .{});
+    var file = try std.fs.cwd().openFile("sample2.txt", .{});
     defer file.close();
 
     var buf_reader = std.io.bufferedReader(file.reader());
     const in_stream = buf_reader.reader();
 
     var buf: [1024]u8 = undefined;
+
+    var matches: [205]u4 = std.mem.zeroes([205]u4);
+    var mIdx: usize = 0;
+
     var ct1: u32 = 0;
 
     while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
@@ -80,6 +85,7 @@ pub fn main() !void {
         for (winner[0..e]) |w| {
             for (numbers) |n| {
                 if (w == n) {
+                    matches[mIdx] += 1;
                     if (score == 0) {
                         score += 1;
                     } else {
@@ -88,12 +94,44 @@ pub fn main() !void {
                 }
             }
         }
+        mIdx += 1;
         //info("matches: {d} val: {d}", .{ matches, val });
 
         ct1 += score;
         //info("vals: {d}", .{winner});
     }
     info("part1: {d}", .{ct1});
+
+    info("matches: {d}", .{matches});
+    // score each card
+    // work through a stack?
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    var values = ArrayList(*u4).init(allocator);
+    defer values.deinit();
+
+    //try values.appendSlice(matches[0..6]);
+    for (matches[0..6]) |*match| {
+        try values.append(match);
+    }
+
+    var i: usize = 0;
+    while (i < values.items.len) : (i += 1) {
+        const v = values.items[1];
+        if (v.* == 0) {
+            continue;
+        }
+        const next = i + 1;
+        var end = next + v.*;
+        if (end > values.items.len) {
+            end = values.items.len;
+        }
+        try values.appendSlice(values.items[next..end]);
+        //allocator.free(values.items[i]);
+    }
+
+    info("part2: {d}", .{i});
 }
 
 fn parseIntBuf(b: []const u8) !u8 {

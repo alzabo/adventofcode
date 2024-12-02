@@ -141,6 +141,6 @@ fn parseIntBuf(b: []const u8) !u8 {
 }
 
 const Card = struct {
-    win: [10]u8,
-    nums: [25]u8,
+    score: u8,
+    count: u8,
 };

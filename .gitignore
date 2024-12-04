@@ -1,4 +1,4 @@
-input.txt
-sample.txt
+input*.txt
+sample*.txt
 zig-cache/
 zig-out/

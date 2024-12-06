@@ -1,4 +1,6 @@
 input*.txt
 sample*.txt
+input
+sample
 zig-cache/
 zig-out/
